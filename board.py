@@ -2,37 +2,51 @@ import random
 from cell import Cell
 
 class Board:
-    def __init__(self, num_rows, num_columns, num_mines):
-        self.num_rows = num_rows
-        self.num_columns = num_columns
-        self.num_mines = num_mines
-        self.cells = [[Cell() for _ in range(num_columns)] for _ in range(num_rows)]
-        self.initialize_board()
+    def __init__(self, rows, cols, bombs):
+        self.rows = rows
+        self.cols = cols
+        self.bombs = bombs
+        self.grid = [[Cell(row, col) for col in range(cols)] for row in range(rows)]
+        self.place_bombs()
+        self.calculate_bomb_counts()
 
-    def initialize_board(self):
-        self.place_mines()
-        self.calculate_adjacency()
+    def place_bombs(self):
+        placed_bombs = 0
+        while placed_bombs < self.bombs:
+            row = random.randint(0, self.rows - 1)
+            col = random.randint(0, self.cols - 1)
+            cell = self.grid[row][col]
+            if not cell.is_bomb:
+                cell.is_bomb = True
+                placed_bombs += 1
 
-    def place_mines(self):
-        mines_placed = 0
-        while mines_placed < self.num_mines:
-            row = random.randint(0, self.num_rows - 1)
-            col = random.randint(0, self.num_columns - 1)
-            if not self.cells[row][col].is_mine:
-                self.cells[row][col].is_mine = True
-                mines_placed += 1
+    def calculate_bomb_counts(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if not self.grid[row][col].is_bomb:
+                    self.grid[row][col].bomb_count = self.count_adjacent_bombs(row, col)
 
-    def calculate_adjacency(self):
-        for row in range(self.num_rows):
-            for col in range(self.num_columns):
-                self.cells[row][col].calculate_adjacent_mines(self, row, col)
+    def count_adjacent_bombs(self, row, col):
+        count = 0
+        for r in range(max(0, row-1), min(self.rows, row+2)):
+            for c in range(max(0, col-1), min(self.cols, col+2)):
+                if (r, c) != (row, col) and self.grid[r][c].is_bomb:
+                    count += 1
+        return count
 
     def reveal_cell(self, row, col):
-        if not self.cells[row][col].is_revealed:
-            self.cells[row][col].reveal()
+        cell = self.grid[row][col]
+        if cell.is_revealed or cell.is_flagged:
+            return
+
+        cell.reveal()
+        if cell.bomb_count == 0:
+            for r in range(max(0, row-1), min(self.rows, row+2)):
+                for c in range(max(0, col-1), min(self.cols, col+2)):
+                    if (r, c) != (row, col):
+                        self.reveal_cell(r, c)
 
     def toggle_flag(self, row, col):
-        self.cells[row][col].flag()
-
-    def is_mine(self, row, col):
-        return self.cells[row][col].is_mine
+        cell = self.grid[row][col]
+        if not cell.is_revealed:
+            cell.toggle_flag()
