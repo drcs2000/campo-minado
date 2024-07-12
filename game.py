@@ -8,12 +8,12 @@ class MinesweeperGame:
         self.master.title("Campo Minado")
         self.size = 8
         self.bombs = 10
-        self.flags_placed = 0
-        self.board = Board(self.size, self.size, self.bombs)
-        self.is_flag_mode = False
-        self.header_frame = None  # Inicializa como None
-        self.create_menu()
-        self.show_start_menu()
+        self.flags_placed = 0  # Contador de bandeiras colocadas
+        self.board = Board(self.size, self.size, self.bombs)  # Inicializa o tabuleiro
+        self.is_flag_mode = False  # Indica se o modo de bandeira está ativo
+        self.header_frame = None  # Inicializa o cabeçalho como None
+        self.create_menu()  # Cria o menu do jogo
+        self.show_start_menu()  # Mostra o menu inicial
 
     def center_window(self, window):
         window.update_idletasks()
@@ -23,12 +23,13 @@ class MinesweeperGame:
         screen_height = window.winfo_screenheight()
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
-        window.geometry(f'+{x}+{y}')
+        window.geometry(f'+{x}+{y}')  # Centraliza a janela na tela
 
     def create_menu(self):
         menubar = tk.Menu(self.master)
         self.master.config(menu=menubar)
 
+        # Cria o menu "Game" com opções de dificuldade e sair
         game_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Game", menu=game_menu)
         game_menu.add_command(label="Fácil", command=lambda: self.set_difficulty("easy"))
@@ -37,6 +38,7 @@ class MinesweeperGame:
         game_menu.add_separator()
         game_menu.add_command(label="Sair", command=self.master.quit)
 
+        # Cria o menu "Modo" para alternar o modo de bandeira
         flag_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Modo", menu=flag_menu)
         flag_menu.add_command(label="Colocar/Remover Bandeira", command=self.toggle_flag_mode)
@@ -45,6 +47,7 @@ class MinesweeperGame:
         self.header_frame = ttk.Frame(self.master, padding="10", style="Header.TFrame")
         self.header_frame.pack(side="top", fill="x")
 
+        # Cria labels para exibir a contagem de bandeiras e campos restantes
         self.flags_label = ttk.Label(self.header_frame, text=f"Bandeiras: {self.flags_placed}", style="Header.TLabel")
         self.flags_label.pack(side="left")
 
@@ -52,15 +55,16 @@ class MinesweeperGame:
         self.remaining_label.pack(side="right")
 
     def update_header(self):
-        self.flags_label.config(text=f"Bandeiras: {self.flags_placed}")
+        self.flags_label.config(text=f"Bandeiras: {self.flags_placed}")  # Atualiza a contagem de bandeiras
         remaining_cells = sum(1 for row in self.board.grid for cell in row if not cell.is_revealed)
-        self.remaining_label.config(text=f"Campos restantes: {remaining_cells - self.bombs}")
+        self.remaining_label.config(text=f"Campos restantes: {remaining_cells - self.bombs}")  # Atualiza os campos restantes
 
     def show_start_menu(self):
         for widget in self.master.winfo_children():
             if widget != self.header_frame:
                 widget.destroy()
 
+        # Cria o menu inicial para escolher a dificuldade do jogo
         frame = ttk.Frame(self.master, padding="20")
         frame.pack(pady=20)
 
@@ -81,23 +85,24 @@ class MinesweeperGame:
         elif level == "hard":
             self.size = 16
             self.bombs = 40
-        self.reset_game()
+        self.reset_game()  # Reinicia o jogo com a nova dificuldade
 
     def reset_game(self):
         self.flags_placed = 0
-        self.board = Board(self.size, self.size, self.bombs)
-        self.create_widgets()
-        self.update_header()
+        self.board = Board(self.size, self.size, self.bombs)  # Cria um novo tabuleiro
+        self.create_widgets()  # Cria os widgets do jogo
+        self.update_header()  # Atualiza o cabeçalho
 
     def create_widgets(self):
         for widget in self.master.winfo_children():
             widget.destroy()
 
-        self.create_header()
+        self.create_header()  # Certifique-se de que o cabeçalho seja criado ao iniciar o jogo
 
         self.frame = ttk.Frame(self.master, padding="10")
         self.frame.pack()
 
+        # Cria os botões para cada célula do tabuleiro
         for row in range(self.size):
             for col in range(self.size):
                 button = ttk.Button(self.frame, width=4, command=lambda row=row, col=col: self.on_button_click(row, col))
@@ -108,7 +113,7 @@ class MinesweeperGame:
         self.center_window(self.master)
 
     def toggle_flag_mode(self):
-        self.is_flag_mode = not self.is_flag_mode
+        self.is_flag_mode = not self.is_flag_mode  # Alterna o modo de bandeira
 
     def on_button_click(self, row, col):
         if self.is_flag_mode:
@@ -122,7 +127,7 @@ class MinesweeperGame:
                 self.update_buttons()
                 if self.check_win():
                     self.game_over(True)
-        self.update_header()
+        self.update_header()  # Atualiza o cabeçalho após cada clique
 
     def on_right_click(self, row, col):
         self.board.toggle_flag(row, col)
@@ -131,7 +136,7 @@ class MinesweeperGame:
         else:
             self.flags_placed -= 1
         self.update_buttons()
-        self.update_header()
+        self.update_header()  # Atualiza o cabeçalho após alternar bandeira
 
     def update_buttons(self):
         for row in range(self.size):
@@ -159,6 +164,7 @@ class MinesweeperGame:
         self.game_over(False)
 
     def check_win(self):
+        # Verifica se todas as células não-bomba foram reveladas
         for row in range(self.size):
             for col in range(self.size):
                 cell = self.board.grid[row][col]
@@ -183,7 +189,7 @@ class MinesweeperGame:
         ttk.Button(dialog, text="Sair", command=self.master.quit).pack(side="right", padx=20, pady=10)
         
         self.center_window(dialog)
-        
+
     def restart_game(self, dialog):
         dialog.destroy()
         self.show_start_menu()
