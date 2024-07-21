@@ -7,9 +7,6 @@ class Cell:
         self.__is_flagged = False  # Indica se a célula está marcada com uma bandeira
         self.__bomb_count = 0  # Contagem de bombas adjacentes
 
-    def __init__(self, row, col):  # Sobrecarga do construtor
-        self.__init__(row, col, False)
-
     @property
     def row(self):
         return self.__row
