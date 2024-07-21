@@ -12,6 +12,19 @@ class MinesweeperGame:
         self.__board = Board(self.__size, self.__size, self.__bombs)  # Inicializa o tabuleiro
         self.__is_flag_mode = False  # Indica se o modo de bandeira está ativo
         self.__header_frame = None  # Inicializa o cabeçalho como None
+        self.__timer_label = None  # Inicializa o rótulo do timer como None
+        self.__timer_running = False  # Indica se o timer está ativo
+        self.__timer_counter = 0  # Contador do timer
+        self.__number_colors = {  # Dicionário de cores para os números
+            1: "blue",
+            2: "green",
+            3: "red",
+            4: "purple",
+            5: "maroon",
+            6: "turquoise",
+            7: "black",
+            8: "gray"
+        }
         self.create_menu()  # Cria o menu do jogo
         self.show_start_menu()  # Mostra o menu inicial
 
@@ -51,17 +64,15 @@ class MinesweeperGame:
         self.__header_frame = ttk.Frame(self.master, padding="10", style="Header.TFrame")
         self.__header_frame.pack(side="top", fill="x")
 
-        self.__flags_label = ttk.Label(self.__header_frame, text=f"Bandeiras: {self.__flags_placed}", style="Header.TLabel")
+        self.__flags_label = ttk.Label(self.__header_frame, text=f"Bombas: {self.__bombs - self.__flags_placed}", style="Header.TLabel")
         self.__flags_label.pack(side="left")
 
-        self.__remaining_label = ttk.Label(self.__header_frame, text=f"Campos restantes: {self.__size * self.__size - self.__bombs}", style="Header.TLabel")
-        self.__remaining_label.pack(side="right")
+        self.__timer_label = ttk.Label(self.__header_frame, text="Tempo: 000", style="Header.TLabel")
+        self.__timer_label.pack(side="right")
 
     def update_header(self):
         # Atualiza as informações no cabeçalho
-        self.__flags_label.config(text=f"Bandeiras: {self.__flags_placed}")
-        remaining_cells = sum(1 for row in self.__board.grid for cell in row if not cell.is_revealed)
-        self.__remaining_label.config(text=f"Campos restantes: {remaining_cells - self.__bombs}")
+        self.__flags_label.config(text=f"Bombas: {self.__bombs - self.__flags_placed}")
 
     def show_start_menu(self):
         # Mostra o menu inicial para escolher a dificuldade do jogo
@@ -94,6 +105,31 @@ class MinesweeperGame:
         elif level == "hard":
             self.__size = 16
             self.__bombs = 40
+        self.show_instructions()
+
+    def show_instructions(self):
+        # Mostra as instruções do jogo em um modal
+        instructions = tk.Toplevel(self.master)
+        instructions.title("Instruções")
+        instructions.resizable(False, False)
+
+        instruction_text = (
+            "Bem-vindo ao Campo Minado!\n\n"
+            "Objetivo:\n"
+            "Revele todas as células que não contêm bombas.\n\n"
+            "Como jogar:\n"
+            "1. Clique com o botão esquerdo para revelar uma célula.\n"
+            "2. Clique com o botão direito para colocar/remover uma bandeira.\n\n"
+            "Boa sorte!"
+        )
+
+        ttk.Label(instructions, text=instruction_text, font=("Helvetica", 16), justify="center").pack(pady=10)
+        ttk.Button(instructions, text="Iniciar", command=lambda: [self.start_game(), instructions.destroy()]).pack(pady=5)
+
+        self.center_window(instructions)
+
+    def start_game(self):
+        # Inicia o jogo
         self.reset_game()
 
     def reset_game(self):
@@ -102,6 +138,7 @@ class MinesweeperGame:
         self.__board = Board(self.__size, self.__size, self.__bombs)
         self.create_widgets()
         self.update_header()
+        self.reset_timer()
 
     def create_widgets(self):
         # Cria os widgets do jogo, incluindo o cabeçalho e os botões das células
@@ -115,18 +152,22 @@ class MinesweeperGame:
 
         for row in range(self.__size):
             for col in range(self.__size):
-                button = ttk.Button(self.__frame, width=4, command=lambda row=row, col=col: self.on_button_click(row, col))
+                button = tk.Button(self.__frame, width=4, height=2, command=lambda row=row, col=col: self.on_button_click(row, col))
                 button.bind("<Button-3>", lambda e, row=row, col=col: self.on_right_click(row, col))
-                button.grid(row=row, column=col, padx=2, pady=2)
+                button.grid(row=row, column=col, padx=1, pady=1)
                 self.__board.grid[row][col].button = button
 
         self.center_window(self.master)
 
     def toggle_flag_mode(self):
-        self.__is_flag_mode = not self.__is_flag_mode  # Alterna o modo de bandeira
+        # Alterna o modo de bandeira
+        self.__is_flag_mode = not self.__is_flag_mode
 
     def on_button_click(self, row, col):
         # Lida com o clique do botão esquerdo do mouse em uma célula
+        if not self.__timer_running:
+            self.start_timer()
+
         if self.__is_flag_mode:
             self.on_right_click(row, col)
         else:
@@ -137,6 +178,7 @@ class MinesweeperGame:
                 self.__board.reveal_cell(row, col)
                 self.update_buttons()
                 if self.check_win():
+                    self.stop_timer()
                     self.game_over(True)
         self.update_header()
 
@@ -145,8 +187,10 @@ class MinesweeperGame:
         self.__board.toggle_flag(row, col)
         if self.__board.grid[row][col].is_flagged:
             self.__flags_placed += 1
+            self.__board.grid[row][col].button.config(bg="yellow")
         else:
             self.__flags_placed -= 1
+            self.__board.grid[row][col].button.config(bg="SystemButtonFace")
         self.update_buttons()
         self.update_header()
 
@@ -157,13 +201,17 @@ class MinesweeperGame:
                 cell = self.__board.grid[row][col]
                 if cell.is_revealed:
                     if cell.is_bomb:
-                        cell.button.config(text="B", style="Bomb.TButton")
+                        cell.button.config(bg="red")
                     else:
-                        cell.button.config(text=str(cell.bomb_count), style="Revealed.TButton")
+                        cell.button.config(
+                            text="" if cell.bomb_count == 0 else str(cell.bomb_count),
+                            fg=self.__number_colors.get(cell.bomb_count, "black"),
+                            bg="lightgrey"
+                        )
                 elif cell.is_flagged:
-                    cell.button.config(text="F", style="Flag.TButton")
+                    cell.button.config(bg="yellow")
                 else:
-                    cell.button.config(text="", style="Unrevealed.TButton")
+                    cell.button.config(text="", bg="SystemButtonFace")
 
     def reveal_all_bombs(self, clicked_row, clicked_col):
         # Revela todas as bombas no tabuleiro
@@ -171,10 +219,8 @@ class MinesweeperGame:
             for col in range(self.__size):
                 cell = self.__board.grid[row][col]
                 if cell.is_bomb:
-                    if row == clicked_row and col == clicked_col:
-                        cell.button.config(text="M", style="ClickedBomb.TButton")
-                    else:
-                        cell.button.config(text="B", style="Bomb.TButton")
+                    cell.button.config(bg="red")
+        self.stop_timer()
         self.game_over(False)
 
     def check_win(self):
@@ -210,3 +256,24 @@ class MinesweeperGame:
         # Reinicia o jogo fechando a janela de "Game Over" e voltando ao menu inicial
         dialog.destroy()
         self.show_start_menu()
+
+    def start_timer(self):
+        # Inicia o timer do jogo
+        self.__timer_running = True
+        self.update_timer()
+
+    def stop_timer(self):
+        # Para o timer do jogo
+        self.__timer_running = False
+
+    def reset_timer(self):
+        # Reseta o timer do jogo
+        self.__timer_counter = 0
+        self.__timer_label.config(text="Tempo: 000")
+
+    def update_timer(self):
+        # Atualiza o timer do jogo
+        if self.__timer_running:
+            self.__timer_counter += 1
+            self.__timer_label.config(text=f"Tempo: {self.__timer_counter:03d}")
+            self.master.after(1000, self.update_timer)

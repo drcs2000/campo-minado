@@ -1,11 +1,14 @@
 class Cell:
-    def __init__(self, row, col):
+    def __init__(self, row, col, is_bomb=False):
         self.__row = row  # Linha da célula
         self.__col = col  # Coluna da célula
-        self.__is_bomb = False  # Indica se a célula é uma bomba
+        self.__is_bomb = is_bomb  # Indica se a célula é uma bomba
         self.__is_revealed = False  # Indica se a célula foi revelada
         self.__is_flagged = False  # Indica se a célula está marcada com uma bandeira
         self.__bomb_count = 0  # Contagem de bombas adjacentes
+
+    def __init__(self, row, col):  # Sobrecarga do construtor
+        self.__init__(row, col, False)
 
     @property
     def row(self):
