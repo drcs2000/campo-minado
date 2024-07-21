@@ -1,6 +1,6 @@
 # Campo Minado
 
-Este é um jogo de Campo Minado desenvolvido em Python usando a biblioteca Tkinter para a interface gráfica. O jogo permite ao jogador escolher a dificuldade e fornece uma interface moderna com contadores de bandeiras e campos restantes.
+Este é um jogo de Campo Minado desenvolvido em Python usando a biblioteca Tkinter para a interface gráfica. O jogo permite ao jogador escolher a dificuldade e fornece uma interface moderna com contadores de bombas e tempo jogado.
 
 ## Requisitos
 
