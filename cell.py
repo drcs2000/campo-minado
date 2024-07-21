@@ -1,14 +1,46 @@
 class Cell:
     def __init__(self, row, col):
-        self.row = row
-        self.col = col
-        self.is_bomb = False  # Inicializa a célula como não sendo uma bomba
-        self.is_revealed = False  # Inicializa a célula como não revelada
-        self.is_flagged = False  # Inicializa a célula como não marcada com bandeira
-        self.bomb_count = 0  # Inicializa a contagem de bombas adjacentes como zero
+        self.__row = row  # Linha da célula
+        self.__col = col  # Coluna da célula
+        self.__is_bomb = False  # Indica se a célula é uma bomba
+        self.__is_revealed = False  # Indica se a célula foi revelada
+        self.__is_flagged = False  # Indica se a célula está marcada com uma bandeira
+        self.__bomb_count = 0  # Contagem de bombas adjacentes
+
+    @property
+    def row(self):
+        return self.__row
+
+    @property
+    def col(self):
+        return self.__col
+
+    @property
+    def is_bomb(self):
+        return self.__is_bomb
+
+    @is_bomb.setter
+    def is_bomb(self, value):
+        self.__is_bomb = value
+
+    @property
+    def is_revealed(self):
+        return self.__is_revealed
+
+    @property
+    def is_flagged(self):
+        return self.__is_flagged
+
+    @property
+    def bomb_count(self):
+        return self.__bomb_count
+
+    @bomb_count.setter
+    def bomb_count(self, value):
+        self.__bomb_count = value
 
     def reveal(self):
-        self.is_revealed = True  # Revela a célula, alterando seu estado para revelado
+        self.__is_revealed = True  # Revela a célula, alterando seu estado para revelado
 
     def toggle_flag(self):
-        self.is_flagged = not self.is_flagged  # Alterna o estado da bandeira na célula
+        self.__is_flagged = not self.__is_flagged  # Alterna o estado da bandeira na célula
