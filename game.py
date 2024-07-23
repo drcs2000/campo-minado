@@ -15,11 +15,11 @@ class MinesweeperGame:
         self.__timer_label = None
         self.__timer_running = False
         self.__timer_counter = 0
-        self.imagensCriar()
+        self.create_image()
         self.create_menu()
         self.show_start_menu()
 
-    def imagensCriar(self):
+    def create_image(self):
         self.images = {
             "bomb": tk.PhotoImage(file="images/bomb.png"),
             "flag": tk.PhotoImage(file="images/flag.png"),
