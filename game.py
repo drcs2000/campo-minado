@@ -4,32 +4,38 @@ from board import Board
 
 class MinesweeperGame:
     def __init__(self, master):
-        self.master = master  # Janela principal do Tkinter
+        self.master = master
         self.master.title("Campo Minado")
-        self.__size = 8  # Tamanho inicial do tabuleiro
-        self.__bombs = 10  # Número inicial de bombas
-        self.__flags_placed = 0  # Contador de bandeiras colocadas
-        self.__board = Board(self.__size, self.__size, self.__bombs)  # Inicializa o tabuleiro
-        self.__is_flag_mode = False  # Indica se o modo de bandeira está ativo
-        self.__header_frame = None  # Inicializa o cabeçalho como None
-        self.__timer_label = None  # Inicializa o rótulo do timer como None
-        self.__timer_running = False  # Indica se o timer está ativo
-        self.__timer_counter = 0  # Contador do timer
-        self.__number_colors = {  # Dicionário de cores para os números
-            1: "blue",
-            2: "green",
-            3: "red",
-            4: "purple",
-            5: "maroon",
-            6: "turquoise",
-            7: "black",
-            8: "gray"
-        }
-        self.create_menu()  # Cria o menu do jogo
-        self.show_start_menu()  # Mostra o menu inicial
+        self.__size = 8
+        self.__bombs = 10
+        self.__flags_placed = 0
+        self.__board = Board(self.__size, self.__size, self.__bombs)
+        self.__is_flag_mode = False
+        self.__header_frame = None
+        self.__timer_label = None
+        self.__timer_running = False
+        self.__timer_counter = 0
+        self.imagensCriar()
+        self.create_menu()
+        self.show_start_menu()
 
-    def __del__(self):
-        print("MinesweeperGame foi destruído")  # Destrutor
+    def imagensCriar(self):
+        self.images = {
+            "bomb": tk.PhotoImage(file="images/bomb.png"),
+            "flag": tk.PhotoImage(file="images/flag.png"),
+            "button": tk.PhotoImage(file="images/button.png"),
+            "wrong_bomb": tk.PhotoImage(file="images/wrong_bomb.png"),
+            "bomb_loss": tk.PhotoImage(file="images/bomb_loss.png"),
+            "empty": tk.PhotoImage(file="images/empty.png"),  # Adiciona a imagem N0
+            1: tk.PhotoImage(file="images/N1.png"),
+            2: tk.PhotoImage(file="images/N2.png"),
+            3: tk.PhotoImage(file="images/N3.png"),
+            4: tk.PhotoImage(file="images/N4.png"),
+            5: tk.PhotoImage(file="images/N5.png"),
+            6: tk.PhotoImage(file="images/N6.png"),
+            7: tk.PhotoImage(file="images/N7.png"),
+            8: tk.PhotoImage(file="images/N8.png"),
+        }
 
     def center_window(self, window):
         # Centraliza a janela na tela
@@ -147,14 +153,18 @@ class MinesweeperGame:
 
         self.create_header()
 
-        self.__frame = ttk.Frame(self.master, padding="10")
+        border_frame = tk.Frame(self.master, bg="gray", bd=15, relief="ridge")
+        border_frame.pack(padx=10, pady=10)
+
+        self.__frame = ttk.Frame(border_frame, padding="0")
         self.__frame.pack()
 
+        button_size = 28
         for row in range(self.__size):
             for col in range(self.__size):
-                button = tk.Button(self.__frame, width=4, height=2, command=lambda row=row, col=col: self.on_button_click(row, col))
+                button = tk.Button(self.__frame, image=self.images["button"], width=button_size, height=button_size, command=lambda row=row, col=col: self.on_button_click(row, col))
                 button.bind("<Button-3>", lambda e, row=row, col=col: self.on_right_click(row, col))
-                button.grid(row=row, column=col, padx=1, pady=1)
+                button.grid(row=row, column=col, padx=0, pady=0)
                 self.__board.grid[row][col].button = button
 
         self.center_window(self.master)
@@ -187,10 +197,10 @@ class MinesweeperGame:
         self.__board.toggle_flag(row, col)
         if self.__board.grid[row][col].is_flagged:
             self.__flags_placed += 1
-            self.__board.grid[row][col].button.config(bg="yellow")
+            self.__board.grid[row][col].button.config(image=self.images["flag"], bg="grey75", width=28, height=28)
         else:
             self.__flags_placed -= 1
-            self.__board.grid[row][col].button.config(bg="SystemButtonFace")
+            self.__board.grid[row][col].button.config(image=self.images["button"], bg="grey75", width=28, height=28)
         self.update_buttons()
         self.update_header()
 
@@ -201,17 +211,16 @@ class MinesweeperGame:
                 cell = self.__board.grid[row][col]
                 if cell.is_revealed:
                     if cell.is_bomb:
-                        cell.button.config(bg="red")
+                        cell.button.config(image=self.images["bomb"], bg="grey75", width=28, height=28)
                     else:
-                        cell.button.config(
-                            text="" if cell.bomb_count == 0 else str(cell.bomb_count),
-                            fg=self.__number_colors.get(cell.bomb_count, "black"),
-                            bg="lightgrey"
-                        )
+                        if cell.bomb_count > 0:
+                            cell.button.config(image=self.images[cell.bomb_count], bg="grey75", width=28, height=28)
+                        else:
+                            cell.button.config(image=self.images["empty"], bg="grey75", width=28, height=28)
                 elif cell.is_flagged:
-                    cell.button.config(bg="yellow")
+                    cell.button.config(image=self.images["flag"], bg="grey75", width=28, height=28)
                 else:
-                    cell.button.config(text="", bg="SystemButtonFace")
+                    cell.button.config(image=self.images["button"], bg="grey75", width=28, height=28)
 
     def reveal_all_bombs(self, clicked_row, clicked_col):
         # Revela todas as bombas no tabuleiro
@@ -219,7 +228,12 @@ class MinesweeperGame:
             for col in range(self.__size):
                 cell = self.__board.grid[row][col]
                 if cell.is_bomb:
-                    cell.button.config(bg="red")
+                    if row == clicked_row and col == clicked_col:
+                        cell.button.config(image=self.images["bomb_loss"], bg="red", width=28, height=28)
+                    else:
+                        cell.button.config(image=self.images["bomb"], bg="grey75", width=28, height=28)
+                elif cell.is_flagged and not cell.is_bomb:
+                    cell.button.config(image=self.images["wrong_bomb"], bg="grey75", width=28, height=28)
         self.stop_timer()
         self.game_over(False)
 
